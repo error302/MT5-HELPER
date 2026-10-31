@@ -1,0 +1,48 @@
+# xauusd-assistant: local XAUUSD (gold spot/CFD intraday) trading assistant.
+#
+# DEFAULT IS ADVISORY ONLY: no execution path is active with this file.
+# Risk values below are research defaults from PLAN.md section 6 and require
+# owner review before they are used for sizing real exposure.
+#
+# All timestamps are UTC internally; broker sessions are stored with named
+# time zones where DST matters (Task 2 discovery).
+
+mode: advisory                # advisory | paper | demo | live
+config_version: "0.1.0"
+strategy_version: "ema-pullback-r1"
+dataset_version: "unversioned"
+
+# Explicit broker symbol mapping: canonical -> EXACT broker symbol incl. suffix.
+# The value below is a PLACEHOLDER; it must be replaced with the symbol verified
+# by Task 2 metadata discovery before any order path is considered.
+symbol_map:
+  XAUUSD: "XAUUSD"
+
+risk:
+  planned_risk_per_trade: 0.0025      # 0.25% equity planned risk per trade
+  aggregate_open_risk: 0.005          # 0.50% aggregate open planned risk
+  broker_day_loss_halt: 0.01          # 1% broker-day loss halt
+  equity_drawdown_halt: 0.05          # 5% cash-flow-adjusted HWM drawdown halt
+  free_margin_reserve: 0.50           # required margin <= free margin * 0.50
+  max_fills_per_broker_day: 3
+  pause_after_consecutive_losses: 2
+
+events:
+  high_impact_block_minutes_before: 30
+  high_impact_block_minutes_after: 30
+  fomc_block_minutes_before: 30
+  fomc_conference_buffer_minutes: 30
+  daily_rollover_block_minutes: 30
+  weekly_close_block_minutes: 60
+  exit_before_rollover_minutes: 15
+  exit_before_weekly_close_minutes: 15
+
+paths:
+  data_dir: "var/data"
+  journal_dir: "var/journal"
+  reports_dir: "var/reports"
+
+# Live authorization packet. Empty/absent = live permanently locked at startup.
+# startup_live_lock() additionally requires an explicit enable flag at process
+# start so a config file alone can never silently enable live trading.
+live_approval: null

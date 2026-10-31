@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Runtime artifacts (journal, datasets, reports)
+var/
+
+# Local secrets / credentials - never commit
+.env
+*.local.yaml
+credentials/
+
+# OS / editor
+Thumbs.db
+.DS_Store

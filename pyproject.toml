@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xauusd-assistant"
+version = "0.1.0"
+description = "Read-only-first XAUUSD MT5 trading assistant: explained decisions, validated risk, mode-gated execution."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "MetaTrader5==5.0.6231; sys_platform == 'win32'",
+    "pandas==3.1.0",
+    "numpy==2.5.4",
+    "pyarrow==26.0.0",
+    "pydantic==2.14.2",
+    "PyYAML==6.0.3",
+    "fastapi==0.162.0",
+    "uvicorn==0.54.0",
+    "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
