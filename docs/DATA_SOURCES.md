@@ -22,9 +22,16 @@ approval (PLAN.md section 3).
 |---|---|---|---|
 | MetaTrader 5 terminal (owner's broker) | bid/ask ticks, M1/M15/H1/H4 bars, account/positions/orders, contract economics, sessions, swap | local terminal, read-only Python API (`MetaTrader5` 5.0.6231) | Bar/tick timestamps arrive as epoch seconds rendered in the **server clock**; the capability report records `approx_server_skew_seconds` so consumers can audit drift. `tick_volume` is broker-local, **not** global traded volume. Quote freshness gate: age <= 5 s during trading. Forming bar is dropped by default. |
 
-Verification evidence: `var/reports/capability_report_*.json` (login masked),
-produced by `scripts/mt5_smoke_readonly.py` (read-only; never calls order
-functions).
+Verification evidence (2026-11-01, MetaQuotes-Demo demo account `***698`,
+read-only INVESTOR session — least privilege):
+`var/reports/capability_report_*.json`. Broker symbol verified as exactly
+`XAUUSD` (no suffix). Contract economics: digits=2, tick 0.01, tick value
+0.1 USD/lot, volume 0.01..100 step 0.01, trade_allowed=True, 100 M15 closed
+bars readable. Known quirk: `account_info().time` is unset (0) on this
+server, so `server_time_utc` is reported as `null` rather than a silent 1970
+value; clock-skew monitoring must use tick timestamps while the market is
+open. Login credentials live only in gitignored `var/secrets/`; nothing is
+committed.
 
 ## Planned - required for entry gating (approval required)
 

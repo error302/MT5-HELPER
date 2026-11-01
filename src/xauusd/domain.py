@@ -234,7 +234,7 @@ class AccountSnapshot(StrictModel):
     leverage: int = Field(ge=0)
     open_positions: int = Field(ge=0)
     pending_orders: int = Field(ge=0)
-    server_time_utc: datetime
+    server_time_utc: datetime | None = None  # None when the terminal does not report it (e.g. time==0)
     snapshot_at: datetime
 
     _utc = _utc_validator("server_time_utc", "snapshot_at")

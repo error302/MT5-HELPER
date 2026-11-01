@@ -61,8 +61,8 @@ class FakeSymbolInfo:
         self.filling_mode = 1
         self.swap_long = -7.5
         self.swap_short = 2.1
-        self.session_deals = np.zeros(0)
-        self.session_quotes = np.zeros(0)
+        self.session_deals = 0  # live API exposes int session counters
+        self.session_quotes = 0
 
 
 class FakeAccountInfo:
@@ -459,6 +459,17 @@ def test_matching_demo_account_passes(feed: Mt5Feed):
     assert snap.mode is AccountMode.DEMO
     assert snap.login == LOGIN
     assert snap.open_positions == 0
+
+
+def test_unset_server_time_is_reported_as_unknown_not_1970(fake: FakeMt5):
+    fake.account.time = 0  # some servers (e.g. MetaQuotes-Demo) leave this unset
+    fd = Mt5Feed(mt5_module=fake, now_fn=lambda: NOW)
+    fd.connect()
+    snap = fd.get_account(expected_mode=AccountMode.DEMO)
+    assert snap.server_time_utc is None
+    report = fd.capability_report("XAUUSD", exact="XAUUSD.x")
+    assert report["clock"]["server_time_available"] is False
+    assert report["clock"]["approx_server_skew_seconds"] is None
 
 
 def test_account_unavailable_raises(fake: FakeMt5):

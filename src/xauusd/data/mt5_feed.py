@@ -315,6 +315,10 @@ class Mt5Feed:
         margin_level = getattr(info, "margin_level", 0.0) or 0.0
         positions = mt5.positions_total()
         orders = mt5.orders_total()
+        raw_server_time = int(getattr(info, "time", 0) or 0)
+        # Some servers (e.g. MetaQuotes-Demo) leave account time at ~0;
+        # reporting 1970 as "server time" would be a silent lie.
+        server_time_utc = datetime.fromtimestamp(raw_server_time, tz=UTC) if raw_server_time > 1 else None
         return AccountSnapshot(
             login=int(info.login),
             server=str(getattr(info, "server", "") or ""),
@@ -329,7 +333,7 @@ class Mt5Feed:
             leverage=int(getattr(info, "leverage", 0) or 0),
             open_positions=int(positions or 0),
             pending_orders=int(orders or 0),
-            server_time_utc=datetime.fromtimestamp(int(getattr(info, "time", 0) or 0), tz=UTC),
+            server_time_utc=server_time_utc,
             snapshot_at=self._now_fn(),
         )
 
@@ -345,9 +349,22 @@ class Mt5Feed:
         version = mt5.version()
         info = mt5.symbol_info(broker_symbol)
         now = self._now_fn()
-        skew = (account.server_time_utc - now).total_seconds()
+        skew: float | None = (
+            round((account.server_time_utc - now).total_seconds(), 1) if account.server_time_utc else None
+        )
         session_deals = getattr(info, "session_deals", None)
         session_quotes = getattr(info, "session_quotes", None)
+
+        def _count_or_int(value: object) -> int:
+            if value is None:
+                return 0
+            if isinstance(value, (int, float)):
+                return int(value)
+            try:
+                return int(len(value))  # type: ignore[arg-type]
+            except TypeError:
+                return 0
+
         return {
             "generated_at_utc": now.isoformat(),
             "read_only": True,
@@ -366,8 +383,9 @@ class Mt5Feed:
                 "build": int(version[1]) if version else 0,
             },
             "clock": {
-                "server_time_utc": account.server_time_utc.isoformat(),
-                "approx_server_skew_seconds": round(skew, 1),
+                "server_time_utc": account.server_time_utc.isoformat() if account.server_time_utc else None,
+                "approx_server_skew_seconds": skew,
+                "server_time_available": account.server_time_utc is not None,
             },
             "symbol_economics": {
                 "description": spec.description,
@@ -386,8 +404,8 @@ class Mt5Feed:
                 "filling_mode_mask": int(getattr(info, "filling_mode", 0) or 0),
                 "swap_long": float(getattr(info, "swap_long", 0.0) or 0.0),
                 "swap_short": float(getattr(info, "swap_short", 0.0) or 0.0),
-                "session_deals_count": int(len(session_deals)) if session_deals is not None else 0,
-                "session_quotes_count": int(len(session_quotes)) if session_quotes is not None else 0,
+                "session_deals_count": _count_or_int(session_deals),
+                "session_quotes_count": _count_or_int(session_quotes),
                 "path": str(getattr(info, "path", "") or ""),
             },
         }
